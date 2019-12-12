@@ -13,7 +13,7 @@ for i in range(1,10):
 w = Tensor([[.1]], requires_grad=True)
 b = Tensor([.0], requires_grad=True)
 
-for i in range(3):
+for i in range(9):
     for j in range(9):
         x = xs[j]
         y = ys[j]
@@ -24,13 +24,16 @@ for i in range(3):
         y_ = x.matmul(w).add(b)
         print('y_:')
         print(y_.narray)
-        loss = y_.sub(y).pow(Tensor(2.)).div(Tensor(2.))
+        loss = y_.sub(y).pow(Tensor(2.))
         print('loss:')
         print(loss.narray)
         loss.backward()
+
+        # print(w.grad)
+        # print(b.grad)
         
-        w.narray = w.narray + (0.01 * w.grad.T)
-        b.narray = b.narray + (0.01 * b.grad.T)
+        w.narray = w.narray - (0.01 * w.grad.T)
+        b.narray = b.narray - (0.01 * b.grad.T)
 
 print(w.narray)
 print(b.narray)

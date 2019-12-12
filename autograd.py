@@ -53,7 +53,9 @@ class Tensor:
         if self.type == "tensor":
             return Tensor([0])
         if self.op == 'sub':
-            return Tensor([1])
+            l = self.nodes[0]
+            r = self.nodes[1]
+            return Tensor(l.narray - r.narray)
         elif self.op == 'add':
             return Tensor([1])
         elif self.op == 'matmul':
