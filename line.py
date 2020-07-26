@@ -6,7 +6,7 @@ print(t1.narray.dtype)
 
 xs = []
 ys = []
-for i in range(1,10):
+for i in range(1, 10):
     xs.append(Tensor([[i]]))
     ys.append(Tensor([[i * 2]]))
 

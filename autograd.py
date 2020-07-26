@@ -41,6 +41,20 @@ class Tensor:
         n.op = 'div'
         return n
 
+    def ng(self):
+        n = Tensor(-self.narray)
+        n.nodes.append(self)
+        n.type = 'op'
+        n.op = 'ng'
+        return n
+
+    def exp(self):
+        n = Tensor(np.exp(self.narray))
+        n.nodes.append(self)
+        n.type = 'op'
+        n.op = 'exp'
+        return n
+
     def matmul(self, x):
         n = Tensor(self.narray.dot(x.narray))
         n.nodes.append(self)
@@ -49,40 +63,47 @@ class Tensor:
         n.op = 'matmul'
         return n
 
-    def _op_backward(self):
-        if self.type == "tensor":
-            return Tensor([0])
-        if self.op == 'sub':
-            l = self.nodes[0]
-            r = self.nodes[1]
-            return Tensor(l.narray - r.narray)
-        elif self.op == 'add':
-            return Tensor([1])
-        elif self.op == 'matmul':
-            l = self.nodes[0]
-            r = self.nodes[1]
-            if l.requires_grad == True:
-                return r
-            return l
-        elif self.op == 'pow':
-            l = self.nodes[0]
-            dl = Tensor([1.])
-            r = self.nodes[1]
-            return Tensor(r.narray * np.power(dl.narray, r.narray - 1))
-        elif self.op == 'div':
-            l = self.nodes[0]
-            dl = Tensor([1.])
-            r = self.nodes[1]
-            dr = r._op_backward()
-            return Tensor((dl.narray * r.narray + l.narray * dr.narray) / (r.narray ** 2))
-
     def backward(self, grad=None):
-        prev = grad
-        if grad is None:
-            prev = self.narray
-        grad = prev * self._op_backward().narray
-        for i in range(len(self.nodes)):
-            if self.nodes[i].requires_grad:
-                self.nodes[i].grad = grad
-            if self.nodes[i].type == "op":
-                self.nodes[i].backward(grad)
+        if self.type == "op":
+            if self.op == "add":
+                print('add')
+                l = self.nodes[0]
+                r = self.nodes[1]
+                l.backward(grad)
+                r.backward(grad)
+            elif self.op == "sub":
+                print('sub')
+                l = self.nodes[0]
+                r = self.nodes[1]
+                l.backward(grad)
+                r.backward(grad)
+            elif self.op == "pow":
+                print('pow')
+                l = self.nodes[0]
+                r = self.nodes[1]
+                if self.nodes[0].requires_grad:
+                    self.nodes[0].grad = Tensor(r.narray * np.power(l.narray, r.narray - 1))
+                    if grad:
+                        self.nodes[0].grad.narray = self.nodes[0].grad.narray * grad.narray
+                return Tensor(r.narray * np.power(l.narray, r.narray - 1))
+            elif self.op == "ng":
+                print('ng')
+                l = self.nodes[0]
+                if self.nodes[0].requires_grad:
+                    self.nodes[0].grad = Tensor(-1)
+                    if grad:
+                        self.nodes[0].grad.narray = self.nodes[0].grad.narray * grad.narray
+            elif self.op == "exp":
+                print('exp')
+                l = self.nodes[0]
+                if self.nodes[0].requires_grad:
+                    self.nodes[0].grad = self
+                l.backward(self)
+            elif self.op == "div":
+                print('div')
+                l = self.nodes[0]
+                r = self.nodes[1]
+                def gradfun(dl, dr):
+                    return dl * r - l * dr / r ** 2
+        elif self.type == "tensor":
+            return self
